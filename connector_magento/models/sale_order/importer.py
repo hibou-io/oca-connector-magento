@@ -194,17 +194,22 @@ class SaleOrderImportMapper(Component):
 
     def _add_gift_cards_line(self, map_record, values):
         record = map_record.source
-        # if gift_cards_amount is zero or doesn't exist
-        if not record.get('gift_cards_amount'):
-            return values
-        amount = float(record['gift_cards_amount'])
+        amount = float(
+            record.get('gift_cards_amount', 0.0) or
+            record.get('am_gift_cards_amount', 0.0)
+        )
+
         if amount == 0.0:
             return values
+
         line_builder = self.component(usage='order.line.builder.gift')
         line_builder.price_unit = amount
         if 'gift_cards' in record:
             gift_code = ''
-            gift_cards_serialized = record.get('gift_cards')
+            gift_cards_serialized = (
+                    record.get('gift_cards', '') or
+                    record.get('am_gift_cards', '')
+            )
             codes = re_search(r's:1:"c";s:\d+:"(.*?)"', gift_cards_serialized)
             if codes:
                 gift_code = ', '.join(codes.groups())
@@ -215,11 +220,14 @@ class SaleOrderImportMapper(Component):
 
     def _add_store_credit_line(self, map_record, values):
         record = map_record.source
-        if not record.get('customer_balance_amount'):
-            return values
-        amount = float(record['customer_balance_amount'])
+        amount = float(
+            record.get('customer_balance_amount', 0.0) or
+            record.get('amstcred_amount', 0.0)
+        )
+
         if amount == 0.0:
             return values
+
         line_builder = self.component(usage='order.line.builder.magento.store_credit')
         line_builder.price_unit = amount
         line = (0, 0, line_builder.get_line())
