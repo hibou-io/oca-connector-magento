@@ -78,6 +78,10 @@ class Magento2Client(object):
             kwargs['params'] = arguments
         elif arguments is not None:
             kwargs['json'] = arguments
+
+        if not self._verify_ssl:
+            kwargs['verify'] = False
+
         try:
             res = function(url, **kwargs)
         except ValueError:
