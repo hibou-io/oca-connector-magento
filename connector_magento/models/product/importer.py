@@ -72,7 +72,7 @@ class CatalogImageImporter(Component):
             primary = 'image' in image['types']
             try:
                 position = int(image['position'])
-            except ValueError:
+            except (ValueError, TypeError):
                 position = sys.maxsize
             return (primary, -position)
         return sorted(images, key=priority)
