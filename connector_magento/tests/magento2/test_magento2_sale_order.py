@@ -305,3 +305,17 @@ class TestSaleOrder(Magento2SyncTestCase):
         self.assertEqual(
             cassette.requests[5].uri,
             'http://magento/index.php/rest/V1/orders/12/comments')
+
+    def test_100_percent_discount(self):
+        """ Test if a 100% discount order is not blocked by rule paid """
+        mode = self.env['account.payment.mode'].search(
+            [('name', '=', 'checkmo')])
+        mode.import_rule = 'paid'
+        binding = self._import_sale_order('17')
+        self.assertFalse(binding.total_amount)
+        # Product line discount is 100 percent
+        self.assertEqual(binding.order_line[0].price_unit, 44)
+        self.assertEqual(binding.order_line[0].discount, 100)
+        # Shipping line discount is included in the unit price
+        self.assertFalse(binding.order_line[1].price_unit)
+        self.assertFalse(binding.order_line[1].discount)
