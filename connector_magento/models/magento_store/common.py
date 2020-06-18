@@ -1,5 +1,4 @@
-# -*- coding: utf-8 -*-
-# Copyright 2013-2017 Camptocamp SA
+# Copyright 2013-2019 Camptocamp SA
 # © 2016 Sodexis
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl.html)
 
@@ -67,4 +66,5 @@ class StoreAdapter(Component):
     _apply_on = 'magento.store'
 
     _magento_model = 'ol_groups'
+    _magento2_model = 'store/storeGroups'
     _admin_path = 'system_store/editGroup/group_id/{id}'

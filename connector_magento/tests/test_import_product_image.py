@@ -1,10 +1,7 @@
-# -*- coding: utf-8 -*-
-# Copyright 2015-2017 Camptocamp SA
+# Copyright 2015-2019 Camptocamp SA
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl.html)
 
-import urllib.request
 import urllib.error
-import urllib.parse
 import mock
 from base64 import b64encode
 
@@ -13,10 +10,8 @@ from odoo.addons.component.core import WorkContext, Component
 from odoo.addons.component.tests.common import (
     TransactionComponentRegistryCase,
 )
-from odoo.addons.connector_magento import components
-from odoo.addons.connector_magento.models.product.importer import (
-    CatalogImageImporter,
-)
+from .. import components
+from ..models.product.importer import CatalogImageImporter
 from .common import MockResponseImage
 
 # simple square of 4 px filled with green in png, used for the product
@@ -66,7 +61,7 @@ class TestImportProductImage(TransactionComponentRegistryCase):
             _usage = 'backend.adapter'
             _apply_on = 'magento.product.product'
 
-            def get_images(self, id, storeview_id=None):
+            def get_images(self, external_id, storeview_id=None, data=None):
                 return [
                     {'exclude': '1',
                      'file': '/i/n/ink-eater-krylon-bombear-destroyed-tee-2.jpg',  # noqa
@@ -139,13 +134,13 @@ class TestImportProductImage(TransactionComponentRegistryCase):
         )
         binding.with_context.return_value = binding_no_export
 
-        with mock.patch('urllib.request.urlopen') as urlopen:
-            def image_url_response(url):
-                if url.full_url in (url_tee1, url_tee2):
-                    raise urllib.error.HTTPError(url, 404, '404', None, None)
+        with mock.patch('requests.get') as requests_get:
+            def image_url_response(url, headers=None, verify=None):
+                if url in (url_tee1, url_tee2):
+                    return MockResponseImage('', code=404)
                 else:
                     return MockResponseImage(PNG_IMG_4PX_GREEN)
-            urlopen.side_effect = image_url_response
+            requests_get.side_effect = image_url_response
 
             self.image_importer.run(111, binding)
 
@@ -164,16 +159,14 @@ class TestImportProductImage(TransactionComponentRegistryCase):
                     '/i/n/ink-eater-krylon-bombear-destroyed-tee-1.jpg')
         url_tee2 = ('http://localhost:9100/media/catalog/product/'
                     'i/n/ink-eater-krylon-bombear-destroyed-tee-2.jpg')
-        with mock.patch('urllib.request.urlopen') as urlopen:
-            def image_url_response(url):
-                url = url.get_full_url()
+        with mock.patch('requests.get') as requests_get:
+            def image_url_response(url, headers=None, verify=None):
                 if url == url_tee2:
                     raise urllib.error.HTTPError(url, 404, '404', None, None)
                 elif url == url_tee1:
                     raise urllib.error.HTTPError(url, 403, '403', None, None)
-                else:
-                    return MockResponseImage(PNG_IMG_4PX_GREEN)
+                return MockResponseImage(PNG_IMG_4PX_GREEN)
 
-            urlopen.side_effect = image_url_response
+            requests_get.side_effect = image_url_response
             with self.assertRaises(urllib.error.HTTPError):
                 self.image_importer.run(122, binding)

@@ -1,5 +1,4 @@
-# -*- coding: utf-8 -*-
-# Copyright 2013-2017 Camptocamp SA
+# Copyright 2013-2019 Camptocamp SA
 # © 2016 Sodexis
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
@@ -77,9 +76,11 @@ class StockPickingAdapter(Component):
     _magento_model = 'sales_order_shipment'
     _admin_path = 'sales_shipment/view/shipment_id/{id}'
 
-    def _call(self, method, arguments):
+    def _call(self, method, arguments, http_method=None, storeview=None):
         try:
-            return super(StockPickingAdapter, self)._call(method, arguments)
+            return super(StockPickingAdapter, self)._call(
+                method, arguments, http_method=http_method,
+                storeview=storeview)
         except xmlrpc.client.Fault as err:
             # this is the error in the Magento API
             # when the shipment does not exist
@@ -90,21 +91,27 @@ class StockPickingAdapter(Component):
 
     def create(self, order_id, items, comment, email, include_comment):
         """ Create a record on the external system """
+        # pylint: disable=method-required-super
         return self._call('%s.create' % self._magento_model,
                           [order_id, items, comment, email, include_comment])
 
-    def add_tracking_number(self, external_id, carrier_code,
-                            tracking_title, tracking_number):
+    def add_tracking_number(self, *arguments):
         """ Add new tracking number.
 
-        :param external_id: shipment increment id
-        :param carrier_code: code of the carrier on Magento
-        :param tracking_title: title displayed on Magento for the tracking
-        :param tracking_number: tracking number
+        In the case of Magento 1.x, arguments is a list consisting of
+        * external_id: shipment increment id
+        * carrier_code: code of the carrier on Magento
+        * tracking_title: title displayed on Magento for the tracking
+        * tracking_number: tracking number
+
+        In the case of Magento 2.x its only member is a json dict
         """
+        if self.collection.version == '2.0':
+            _external_id, json_data = arguments
+            return self._call(
+                'shipment/track', json_data, http_method='post')
         return self._call('%s.addTrack' % self._magento_model,
-                          [external_id, carrier_code,
-                           tracking_title, tracking_number])
+                          arguments)
 
     def get_carriers(self, external_id):
         """ Get the list of carrier codes allowed for the shipping.

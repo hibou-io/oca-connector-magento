@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # © 2013 Guewen Baconnier,Camptocamp SA,Akretion
 # © 2016 Sodexis
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
@@ -240,11 +239,17 @@ class SaleOrderAdapter(Component):
     _apply_on = 'magento.sale.order'
 
     _magento_model = 'sales_order'
+    _magento2_model = 'orders'
+    _magento2_search = 'orders'
+    _magento2_key = 'entity_id'
     _admin_path = '{model}/view/order_id/{id}'
+    _admin2_path = 'sales/order/view/order_id/{id}'
 
-    def _call(self, method, arguments):
+    def _call(self, method, arguments, http_method=None, storeview=None):
         try:
-            return super(SaleOrderAdapter, self)._call(method, arguments)
+            return super(SaleOrderAdapter, self)._call(
+                method, arguments, http_method=http_method,
+                storeview=storeview)
         except xmlrpc.client.Fault as err:
             # this is the error in the Magento API
             # when the sales order does not exist
@@ -272,24 +277,35 @@ class SaleOrderAdapter(Component):
         if magento_storeview_ids is not None:
             filters['store_id'] = {'in': magento_storeview_ids}
 
-        arguments = {'imported': False,
-                     # 'limit': 200,
-                     'filters': filters,
-                     }
+        if self.collection.version == '1.7':
+            arguments = {
+                'imported': False,
+                # 'limit': 200,
+                'filters': filters,
+            }
+        else:
+            arguments = filters
         return super(SaleOrderAdapter, self).search(arguments)
 
-    def read(self, id, attributes=None):
+    def read(self, external_id, attributes=None):
         """ Returns the information of a record
 
         :rtype: dict
         """
-        record = self._call('%s.info' % self._magento_model,
-                            [id, attributes])
-        return record
+        # pylint: disable=method-required-super
+        if self.collection.version == '1.7':
+            return self._call('%s.info' % self._magento_model,
+                              [external_id, attributes])
+        return super(SaleOrderAdapter, self).read(
+            external_id, attributes=attributes)
 
-    def get_parent(self, id):
-        return self._call('%s.get_parent' % self._magento_model, [id])
+    def get_parent(self, external_id):
+        if self.collection.version == '2.0':
+            res = self.read(external_id)
+            return res.get('relation_parent_id')
+        return self._call('%s.get_parent' % self._magento_model,
+                          [external_id])
 
-    def add_comment(self, id, status, comment=None, notify=False):
+    def add_comment(self, external_id, status, comment=None, notify=False):
         return self._call('%s.addComment' % self._magento_model,
-                          [id, status, comment, notify])
+                          [external_id, status, comment, notify])

@@ -1,5 +1,4 @@
-# -*- coding: utf-8 -*-
-# Copyright 2015-2017 Camptocamp SA
+# Copyright 2015-2019 Camptocamp SA
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl.html)
 
 from .common import MagentoSyncTestCase, recorder
@@ -55,7 +54,8 @@ class TestUpdateStockQty(MagentoSyncTestCase):
             )
 
     def test_compute_new_qty_different_field(self):
-        stock_field = self.env.ref('stock.field_product_product_qty_available')
+        stock_field = self.env.ref(
+            'stock.field_product_product__qty_available')
         self.backend.product_stock_field_id = stock_field
         product = self.binding_product.odoo_id
         binding = self.binding_product

@@ -1,5 +1,4 @@
-# -*- coding: utf-8 -*-
-# Copyright 2014-2017 Camptocamp SA
+# Copyright 2014-2019 Camptocamp SA
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl.html)
 
 from collections import namedtuple
@@ -112,7 +111,6 @@ class TestSaleOrder(MagentoSyncTestCase):
         })
         self.env['delivery.carrier'].create({
             'name': 'ups_GND',
-            'partner_id': self.env.ref('base.main_partner').id,
             'product_id': product.id,
             'magento_code': 'ups_GND',
             'magento_carrier_code': 'ups_GND',
@@ -135,11 +133,13 @@ class TestSaleOrder(MagentoSyncTestCase):
     def test_import_sale_order_options(self):
         """Test import options such as the account_analytic_account and
         the fiscal_position that can be specified at different level of the
-        backend models (backend, wesite, store and storeview)
+        backend models (backend, website, store and storeview)
         """
         binding = self._import_sale_order(100000201)
         self.assertFalse(binding.analytic_account_id)
-        self.assertFalse(binding.fiscal_position_id)
+        default_fp = self.env['account.fiscal.position'].get_fiscal_position(
+            binding.partner_id.id, binding.partner_shipping_id.id)
+        self.assertEqual(binding.fiscal_position_id.id, default_fp)
         # keep a reference to backend models the website
         storeview_id = binding.storeview_id
         store_id = storeview_id.store_id

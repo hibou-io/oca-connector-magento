@@ -1,5 +1,4 @@
-# -*- coding: utf-8 -*-
-# Copyright 2013-2017 Camptocamp SA
+# Copyright 2013-2019 Camptocamp SA
 # © 2016 Sodexis
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl.html)
 
@@ -27,6 +26,9 @@ class ProductCategoryBatchImporter(Component):
 
     def run(self, filters=None):
         """ Run the synchronization """
+        if self.collection.version == '2.0':
+            # TODO. See 8.0 version
+            raise NotImplementedError
         from_date = filters.pop('from_date', None)
         to_date = filters.pop('to_date', None)
         if from_date or to_date:

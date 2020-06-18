@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # © 2013 Guewen Baconnier,Camptocamp SA,Akretion
 # © 2016 Sodexis
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
@@ -54,4 +53,5 @@ class DeliveryCarrier(models.Model):
     def _compute_carrier_code(self):
         for carrier in self:
             if carrier.magento_code:
-                self.magento_carrier_code = carrier.magento_code.split('_')[0]
+                carrier.magento_carrier_code = carrier.magento_code.split(
+                    '_')[0]

@@ -1,5 +1,4 @@
-# -*- coding: utf-8 -*-
-# © 2013-2017 Guewen Baconnier,Camptocamp SA,Akretion
+# © 2013-2019 Guewen Baconnier,Camptocamp SA,Akretion
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
 from odoo import api, models, fields
@@ -25,7 +24,7 @@ class MagentoBinding(models.AbstractModel):
         ondelete='restrict',
     )
     # fields.Char because 0 is a valid Magento ID
-    external_id = fields.Char(string='ID on Magento')
+    external_id = fields.Char(string='ID on Magento', oldname='magento_id')
 
     _sql_constraints = [
         ('magento_uniq', 'unique(backend_id, external_id)',

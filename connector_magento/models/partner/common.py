@@ -1,5 +1,4 @@
-# -*- coding: utf-8 -*-
-# Copyright 2013-2017 Camptocamp SA
+# Copyright 2013-2019 Camptocamp SA
 # © 2016 Sodexis
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
@@ -29,7 +28,7 @@ class ResPartner(models.Model):
         string="Magento Address Bindings",
     )
     birthday = fields.Date(string='Birthday')
-    company = fields.Char(string='Company')
+    company = fields.Char(string='Company name (in Magento)')
 
     @api.model
     def _address_fields(self):
@@ -148,11 +147,18 @@ class PartnerAdapter(Component):
     _apply_on = 'magento.res.partner'
 
     _magento_model = 'customer'
+    _magento2_key = 'id'
+    _magento2_model = 'customers'
+    _magento2_search = 'customers/search'
     _admin_path = '/{model}/edit/id/{id}'
+    # Not valid without security key
+    # _admin2_path = 'customer/index/edit/id/{id}'
 
-    def _call(self, method, arguments):
+    def _call(self, method, arguments, http_method=None, storeview=None):
         try:
-            return super(PartnerAdapter, self)._call(method, arguments)
+            return super(PartnerAdapter, self)._call(
+                method, arguments, http_method=http_method,
+                storeview=storeview)
         except xmlrpc.client.Fault as err:
             # this is the error in the Magento API
             # when the customer does not exist
@@ -182,9 +188,11 @@ class PartnerAdapter(Component):
         if magento_website_ids is not None:
             filters['website_id'] = {'in': magento_website_ids}
 
-        # the search method is on ol_customer instead of customer
-        return self._call('ol_customer.search',
-                          [filters] if filters else [{}])
+        if self.collection.version == '1.7':
+            # the search method is on ol_customer instead of customer
+            return self._call('ol_customer.search',
+                              [filters] if filters else [{}])
+        return super(PartnerAdapter, self).search(filters=filters)
 
 
 class AddressAdapter(Component):
@@ -207,5 +215,6 @@ class AddressAdapter(Component):
 
     def create(self, customer_id, data):
         """ Create a record on the external system """
+        # pylint: disable=method-required-super
         return self._call('%s.create' % self._magento_model,
                           [customer_id, data])
