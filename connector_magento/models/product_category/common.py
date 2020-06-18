@@ -57,9 +57,11 @@ class ProductCategoryAdapter(Component):
     # Not valid without security key
     # _admin2_path = '/catalog/category/index/'
 
-    def _call(self, method, arguments):
+    def _call(self, method, arguments, http_method=None, storeview=None):
         try:
-            return super(ProductCategoryAdapter, self)._call(method, arguments)
+            return super(ProductCategoryAdapter, self)._call(
+                method, arguments, http_method=http_method,
+                storeview=storeview)
         except xmlrpc.client.Fault as err:
             # 101 is the error in the Magento API
             # when the category does not exist

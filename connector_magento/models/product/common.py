@@ -44,7 +44,7 @@ class MagentoProductProduct(models.Model):
         ]
 
     odoo_id = fields.Many2one(comodel_name='product.product',
-                              string='Product',
+                              string='Odoo Product',
                               required=True,
                               ondelete='restrict')
     magento_internal_id = fields.Char(
@@ -211,10 +211,11 @@ class ProductProductAdapter(Component):
     _magento2_key = 'sku'
     _admin_path = '/{model}/edit/id/{id}'
 
-    def _call(self, method, arguments, http_method=None):
+    def _call(self, method, arguments, http_method=None, storeview=None):
         try:
             return super(ProductProductAdapter, self)._call(
-                method, arguments, http_method=http_method)
+                method, arguments, http_method=http_method,
+                storeview=storeview)
         except xmlrpc.client.Fault as err:
             # this is the error in the Magento API
             # when the product does not exist
@@ -255,9 +256,8 @@ class ProductProductAdapter(Component):
             return self._call(
                 'ol_catalog_product.info',
                 [int(external_id), storeview_id, attributes, 'id'])
-        # TODO: storeview context in Magento 2.0
         res = super(ProductProductAdapter, self).read(
-            external_id, attributes=attributes)
+            external_id, attributes=attributes, storeview=storeview_id)
         if res:
             for attr in res.get('custom_attributes', []):
                 res[attr['attribute_code']] = attr['value']
@@ -279,11 +279,21 @@ class ProductProductAdapter(Component):
         if self.collection.version == '1.7':
             return self._call('product_media.list',
                               [int(external_id), storeview_id, 'id'])
+
         res = []
+        # Fetch base media url from storeview
+        storeview = (
+            self.env['magento.storeview'].browse(storeview_id) if storeview_id
+            else self.env['magento.storeview'].search(
+                [('backend_id', '=', self.collection.id),
+                 ('code', '=', 'default')]))
+        base_url = (storeview.base_media_url or
+                    '%s/media/' % self.backend_record.location)
+
         for entry in data.get('media_gallery_entries', []):
             if entry['media_type'] == 'image':
-                entry['url'] = '%s/media/catalog/product/%s' % (
-                    self.backend_record.location, entry['file'])
+                entry['url'] = '%scatalog/product/%s' % (
+                    base_url, entry['file'])
                 res.append(entry)
         return res
 
@@ -304,7 +314,7 @@ class ProductProductAdapter(Component):
 
         # Magento2
         data = {'stockItem': data}
-        res = self._call('stockItems/%s' % external_id, None)
+        res = self._call('stockItems/%s' % self.escape(external_id), None)
         if isinstance(res, dict):
             res = [res]
         item_id = 0
@@ -316,8 +326,8 @@ class ProductProductAdapter(Component):
             raise ValueError(
                 'No stock item found for product %s for default stock_id 1' %
                 external_id)
-        self._call('products/%s/stockItems/%s' % (external_id, item_id),
-                   data, http_method='put')
+        self._call('products/%s/stockItems/%s' % (
+            self.escape(external_id), item_id), data, http_method='put')
 
 
 class MagentoBindingProductListener(Component):

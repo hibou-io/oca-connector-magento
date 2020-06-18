@@ -13,7 +13,7 @@ Magento2 version of the helpers from tests/common.py
 from os.path import dirname, join
 from vcr import VCR
 
-from odoo.addons.connector_magento.tests.common import MagentoTestCase
+from ..common import MagentoTestCase
 
 
 recorder = VCR(
@@ -31,7 +31,7 @@ class Magento2TestCase(MagentoTestCase):
         self.recorder = recorder
         self.backend.write({
             'version': '2.0',
-            'token': '3cb60nz2f1ja3o453a9ruy47m8ffrm6u',
+            'token': 'm59qseoztake3xm1zcvkiv8qnuj09da0',
         })
 
 

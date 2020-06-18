@@ -224,8 +224,8 @@ class PartnerAddressBook(Component):
             # defines if the billing address is merged with the partner
             # or imported as a standalone contact
             merge = False
-            if (magento_record.get('default_billing')  # Magento 2.x
-                    or magento_record.get('default_billing')):  # Magento 1.x
+            if (magento_record.get('is_default_billing')  # Magento 1.x
+                    or magento_record.get('default_billing')):  # Magento 2.x
                 binding_model = self.env['magento.res.partner']
                 partner_binding = binding_model.browse(partner_binding_id)
                 if magento_record.get('company'):
@@ -453,7 +453,7 @@ class AddressImportMapper(Component):
 
     @mapping
     def default_billing(self, record):
-        return {'default_billing': self.is_billing(record)}
+        return {'is_default_billing': self.is_billing(record)}
 
     def default_shipping(self, record):
         return {'default_shipping': self.is_shipping(record)}

@@ -28,7 +28,7 @@ class ResPartner(models.Model):
         string="Magento Address Bindings",
     )
     birthday = fields.Date(string='Birthday')
-    company = fields.Char(string='Company')
+    company = fields.Char(string='Company name (in Magento)')
 
     @api.model
     def _address_fields(self):
@@ -154,9 +154,11 @@ class PartnerAdapter(Component):
     # Not valid without security key
     # _admin2_path = 'customer/index/edit/id/{id}'
 
-    def _call(self, method, arguments):
+    def _call(self, method, arguments, http_method=None, storeview=None):
         try:
-            return super(PartnerAdapter, self)._call(method, arguments)
+            return super(PartnerAdapter, self)._call(
+                method, arguments, http_method=http_method,
+                storeview=storeview)
         except xmlrpc.client.Fault as err:
             # this is the error in the Magento API
             # when the customer does not exist

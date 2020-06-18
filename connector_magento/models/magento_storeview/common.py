@@ -30,6 +30,9 @@ class MagentoStoreview(models.Model):
                                readonly=True)
     lang_id = fields.Many2one(comodel_name='res.lang', string='Language')
     team_id = fields.Many2one(comodel_name='crm.team', string='Sales Team')
+    base_media_url = fields.Char(
+        help=('Base URL to retrieve product images. Used for Magento2 only. '
+              'For example: http://magento/media'))
     backend_id = fields.Many2one(
         comodel_name='magento.backend',
         related='store_id.website_id.backend_id',

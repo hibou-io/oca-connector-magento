@@ -16,6 +16,7 @@ class MagentoStoreviewImportMapper(Component):
         ('code', 'code'),
         ('is_active', 'enabled'),
         ('sort_order', 'sort_order'),
+        ('base_media_url', 'base_media_url'),
     ]
 
     @mapping

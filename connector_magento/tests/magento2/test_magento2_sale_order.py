@@ -1,8 +1,9 @@
 # Copyright 2014-2019 Camptocamp SA
+# Copyright 2020 Opener B.V.
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl.html)
 
 from collections import namedtuple
-from .common import MagentoSyncTestCase, recorder
+from .common import Magento2SyncTestCase, recorder
 
 ExpectedOrderLine = namedtuple(
     'ExpectedOrderLine',
@@ -10,7 +11,7 @@ ExpectedOrderLine = namedtuple(
 )
 
 
-class TestSaleOrder(MagentoSyncTestCase):
+class TestSaleOrder(Magento2SyncTestCase):
 
     def setUp(self):
         super(TestSaleOrder, self).setUp()
@@ -21,7 +22,7 @@ class TestSaleOrder(MagentoSyncTestCase):
 
     def test_import_sale_order(self):
         """ Import sale order: check """
-        binding = self._import_sale_order(100000201)
+        binding = self._import_sale_order('9')
         self.assertEqual(binding.workflow_process_id, self.workflow,
                          "If the automatic workflow is empty, the "
                          "onchanges have not been applied.")
@@ -29,25 +30,27 @@ class TestSaleOrder(MagentoSyncTestCase):
     def test_import_sale_order_with_prefix(self):
         """ Import sale order with prefix """
         self.backend.write({'sale_prefix': 'EC'})
-        binding = self._import_sale_order(100000201)
-        self.assertEqual(binding.name, 'EC100000201')
+        binding = self._import_sale_order('9')
+        self.assertEqual(binding.name, 'EC000000013')
 
     def test_import_sale_order_with_configurable(self):
         """ Import sale order with configurable product """
-        binding = self._import_sale_order(100000201)
+        binding = self._import_sale_order('9')
 
         prod1 = self.env['magento.product.product'].search(
-            [('external_id', '=', 512), ('backend_id', '=', self.backend.id)]
+            [('external_id', '=', 'MH09-XS-Blue'),
+             ('backend_id', '=', self.backend.id)]
         )
         prod2 = self.env['magento.product.product'].search(
-            [('external_id', '=', 302), ('backend_id', '=', self.backend.id)]
+            [('external_id', '=', 'RACER'),
+             ('backend_id', '=', self.backend.id)]
         )
         ship = binding.carrier_id.product_id
         expected = [
             ExpectedOrderLine(
                 product_id=prod1.odoo_id,
-                name='Tori Tank',
-                price_unit=60.,
+                name='Abominable Hoodie-XS-Blue',
+                price_unit=69.,
                 product_uom_qty=2.,
             ),
             ExpectedOrderLine(
@@ -59,7 +62,7 @@ class TestSaleOrder(MagentoSyncTestCase):
             ExpectedOrderLine(
                 product_id=ship,
                 name='Shipping Costs',
-                price_unit=12.31,
+                price_unit=5.,
                 product_uom_qty=1.,
             ),
         ]
@@ -68,7 +71,7 @@ class TestSaleOrder(MagentoSyncTestCase):
 
     def test_import_sale_order_copy_quotation(self):
         """ Copy a sales order with copy_quotation move bindings """
-        binding = self._import_sale_order(100000201)
+        binding = self._import_sale_order('9')
         order = binding.odoo_id
         order.action_cancel()
         new = order.copy()
@@ -78,12 +81,11 @@ class TestSaleOrder(MagentoSyncTestCase):
             self.assertEqual(mag_line.order_id, new)
 
     def test_import_sale_order_edited(self):
-        """ Import of an edited sale order links to its parent """
-        with recorder.use_cassette('import_sale_order_edited_1'):
-            binding = self._import_sale_order(100000200, cassette=False)
-        with recorder.use_cassette('import_sale_order_edited_2'):
-            new_binding = self._import_sale_order('100000200-1',
-                                                  cassette=False)
+        """ Import of an edited sale order links to its parent
+        (order '9' was cancelled in Magento after recording its cassette)
+        """
+        binding = self._import_sale_order('9')
+        new_binding = self._import_sale_order('10')
         self.assertEqual(new_binding.magento_parent_id, binding)
         self.assertTrue(binding.canceled_in_backend)
 
@@ -95,14 +97,17 @@ class TestSaleOrder(MagentoSyncTestCase):
         ])
         team = self.env['crm.team'].create({'name': 'Magento Team'})
         storeview.team_id = team
-        binding = self._import_sale_order(100000201)
+        binding = self._import_sale_order('9')
         self.assertEqual(binding.team_id, team)
 
     def test_import_sale_order_guest(self):
-        binding = self._import_sale_order(145000008)
+        binding = self._import_sale_order('16')
         partner_binding = binding.partner_id.magento_bind_ids
-        self.assertEqual(partner_binding.external_id, 'guestorder:145000008')
+        self.assertEqual(partner_binding.external_id, 'guestorder:000000019')
         self.assertTrue(partner_binding.guest_customer)
+        self.assertEqual(
+            binding.partner_id.category_id,
+            self.env.ref('connector_magento.category_no_account'))
 
     def test_import_sale_order_carrier_product(self):
         """ Product of a carrier is used in the sale line """
@@ -112,10 +117,10 @@ class TestSaleOrder(MagentoSyncTestCase):
         self.env['delivery.carrier'].create({
             'name': 'ups_GND',
             'product_id': product.id,
-            'magento_code': 'ups_GND',
+            'magento_code': 'tablerate_bestway',
             'magento_carrier_code': 'ups_GND',
         })
-        binding = self._import_sale_order(100000201)
+        binding = self._import_sale_order('9')
         # check if we have a line with the carrier product,
         # which is the shipping line
         shipping_line = False
@@ -135,7 +140,7 @@ class TestSaleOrder(MagentoSyncTestCase):
         the fiscal_position that can be specified at different level of the
         backend models (backend, website, store and storeview)
         """
-        binding = self._import_sale_order(100000201)
+        binding = self._import_sale_order('9')
         self.assertFalse(binding.analytic_account_id)
         default_fp = self.env['account.fiscal.position'].get_fiscal_position(
             binding.partner_id.id, binding.partner_shipping_id.id)
@@ -152,7 +157,7 @@ class TestSaleOrder(MagentoSyncTestCase):
             {'name': 'aaa1'})
         self.backend.account_analytic_id = account_analytic_id
         self.backend.fiscal_position_id = fp1.id
-        binding = self._import_sale_order(100000201)
+        binding = self._import_sale_order('9')
         self.assertEqual(binding.analytic_account_id, account_analytic_id)
         self.assertEqual(binding.fiscal_position_id, fp1)
         binding.odoo_id.unlink()
@@ -163,7 +168,7 @@ class TestSaleOrder(MagentoSyncTestCase):
         fp2 = self.env['account.fiscal.position'].create({'name': "fp2"})
         website_id.specific_account_analytic_id = account_analytic_id
         website_id.specific_fiscal_position_id = fp2.id
-        binding = self._import_sale_order(100000201)
+        binding = self._import_sale_order('9')
         self.assertEqual(binding.analytic_account_id, account_analytic_id)
         self.assertEqual(binding.fiscal_position_id, fp2)
         binding.odoo_id.unlink()
@@ -174,7 +179,7 @@ class TestSaleOrder(MagentoSyncTestCase):
         fp3 = self.env['account.fiscal.position'].create({'name': "fp3"})
         store_id.specific_account_analytic_id = account_analytic_id
         store_id.specific_fiscal_position_id = fp3.id
-        binding = self._import_sale_order(100000201)
+        binding = self._import_sale_order('9')
         self.assertEqual(binding.analytic_account_id, account_analytic_id)
         self.assertEqual(binding.fiscal_position_id, fp3)
         binding.odoo_id.unlink()
@@ -185,13 +190,13 @@ class TestSaleOrder(MagentoSyncTestCase):
         fp4 = self.env['account.fiscal.position'].create({'name': "fp4"})
         storeview_id.specific_account_analytic_id = account_analytic_id
         storeview_id.specific_fiscal_position_id = fp4.id
-        binding = self._import_sale_order(100000201)
+        binding = self._import_sale_order('9')
         self.assertEqual(binding.analytic_account_id, account_analytic_id)
         self.assertEqual(binding.fiscal_position_id, fp4)
 
     def test_sale_order_cancel_delay_job(self):
         """ Cancel an order, delay a cancel job """
-        binding = self._import_sale_order(100000201)
+        binding = self._import_sale_order('12')
         with self.mock_with_delay() as (delayable_cls, delayable):
             order = binding.odoo_id
 
@@ -206,7 +211,7 @@ class TestSaleOrder(MagentoSyncTestCase):
 
     def test_cancel_export(self):
         """ Export the cancel state """
-        binding = self._import_sale_order(100000201)
+        binding = self._import_sale_order('12')
         with self.mock_with_delay():
             order = binding.odoo_id
             order.action_cancel()
@@ -216,23 +221,24 @@ class TestSaleOrder(MagentoSyncTestCase):
 
             # call the job synchronously, so we check the calls
             binding.export_state_change(allowed_states=['cancel'])
-            # 1. login, 2. sales_order.info,
-            # 3. sales_order.addComment, 4. endSession
-            self.assertEqual(4, len(cassette.requests))
+            # 1. fetch sales_order
+            # 2. update sale order state
+            # 3. post comment on sale order
+            self.assertEqual(3, len(cassette.requests))
 
             self.assertEqual(
-                ('sales_order.info', ['100000201']),
-                self.parse_cassette_request(cassette.requests[1].body)
-            )
+                cassette.requests[0].uri,
+                'http://magento/index.php/rest/V1/orders/12')
             self.assertEqual(
-                ('sales_order.addComment', ['100000201', 'canceled']),
-                self.parse_cassette_request(cassette.requests[2].body)
-            )
+                cassette.requests[1].uri,
+                'http://magento/index.php/rest/V1/orders')
+            self.assertEqual(
+                cassette.requests[2].uri,
+                'http://magento/index.php/rest/V1/orders/12/comments')
 
     def test_copy_quotation_delay_export_state(self):
         """ Delay a state export on new copy from canceled order """
-        with recorder.use_cassette('import_sale_order_edited_1'):
-            binding = self._import_sale_order(100000200, cassette=False)
+        binding = self._import_sale_order('12')
 
         order = binding.odoo_id
 
@@ -256,29 +262,60 @@ class TestSaleOrder(MagentoSyncTestCase):
 
     def test_copy_quotation_export_state(self):
         """ Export a new state on new copy from canceled order """
-        with recorder.use_cassette('import_sale_order_edited_1'):
-            binding = self._import_sale_order(100000200, cassette=False)
+        binding = self._import_sale_order('12')
 
         # cancel the order
-        with self.mock_with_delay():
-            order = binding.odoo_id
-            order.action_cancel()
-            order = order.copy()
-
         with recorder.use_cassette(
                 'test_sale_order_reopen_export') as cassette:
 
+            with self.mock_with_delay():
+                order = binding.odoo_id
+                order.action_cancel()
+
+                # call the job synchronously, so we check the calls
+                binding.export_state_change()
+
+                order = order.copy()
+
             # call the job synchronously, so we check the calls
             binding.export_state_change()
-            # 1. login, 2. sales_order.info,
-            # 3. sales_order.addComment, 4. endSession
-            self.assertEqual(4, len(cassette.requests))
 
-            self.assertEqual(
-                ('sales_order.info', ['100000200']),
-                self.parse_cassette_request(cassette.requests[1].body)
-            )
-            self.assertEqual(
-                ('sales_order.addComment', ['100000200', 'pending']),
-                self.parse_cassette_request(cassette.requests[2].body)
-            )
+        # 1. fetch sales_order
+        # 2. update sale order state to 'cancel'
+        # 3. post comment on sale order with new state
+        # 4. fetch sales_order
+        # 5. update sale order state to 'pending'
+        # 6. post comment on sale order with new state
+        self.assertEqual(6, len(cassette.requests))
+        self.assertEqual(
+            cassette.requests[0].uri,
+            'http://magento/index.php/rest/V1/orders/12')
+        self.assertEqual(
+            cassette.requests[1].uri,
+            'http://magento/index.php/rest/V1/orders')
+        self.assertEqual(
+            cassette.requests[2].uri,
+            'http://magento/index.php/rest/V1/orders/12/comments')
+        self.assertEqual(
+            cassette.requests[3].uri,
+            'http://magento/index.php/rest/V1/orders/12')
+        self.assertEqual(
+            cassette.requests[4].uri,
+            'http://magento/index.php/rest/V1/orders')
+        self.assertEqual(
+            cassette.requests[5].uri,
+            'http://magento/index.php/rest/V1/orders/12/comments')
+
+    def test_100_percent_discount(self):
+        """ Test if a 100% discount order is not blocked by rule paid """
+        mode = self.env['account.payment.mode'].search(
+            [('name', '=', 'checkmo')])
+        mode.import_rule = 'paid'
+        binding = self._import_sale_order('17')
+        self.assertFalse(binding.total_amount)
+        # Product line discount is 100 percent
+        self.assertEqual(binding.order_line[0].price_unit, 44)
+        self.assertEqual(binding.order_line[0].discount, 100)
+        # Shipping line discount is included in the unit price
+        self.assertFalse(binding.order_line[1].price_unit)
+        self.assertFalse(binding.order_line[1].discount)

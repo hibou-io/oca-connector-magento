@@ -245,10 +245,11 @@ class SaleOrderAdapter(Component):
     _admin_path = '{model}/view/order_id/{id}'
     _admin2_path = 'sales/order/view/order_id/{id}'
 
-    def _call(self, method, arguments, http_method=None):
+    def _call(self, method, arguments, http_method=None, storeview=None):
         try:
             return super(SaleOrderAdapter, self)._call(
-                method, arguments, http_method=http_method)
+                method, arguments, http_method=http_method,
+                storeview=storeview)
         except xmlrpc.client.Fault as err:
             # this is the error in the Magento API
             # when the sales order does not exist

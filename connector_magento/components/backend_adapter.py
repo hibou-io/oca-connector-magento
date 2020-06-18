@@ -4,7 +4,7 @@
 import socket
 import logging
 import requests
-from urllib.parse import quote
+from urllib.parse import quote_plus
 import xmlrpc.client
 
 from odoo.addons.component.core import AbstractComponent
@@ -78,16 +78,7 @@ class Magento2Client(object):
             kwargs['params'] = arguments
         elif arguments is not None:
             kwargs['json'] = arguments
-
-        if not self._verify_ssl:
-            kwargs['verify'] = False
-
-        try:
-            res = function(url, **kwargs)
-        except ValueError:
-            # FIXME to remove after development # TODO
-            import pdb
-            pdb.set_trace()
+        res = function(url, **kwargs)
         if (res.status_code == 400 and res._content):
             raise requests.HTTPError(
                 url, res.status_code, res._content, headers, __name__)
@@ -311,6 +302,12 @@ class GenericAdapter(AbstractComponent):
             res = res['items'] or []
         return [item[key] for item in res if item[key] != 0]
 
+    @staticmethod
+    def escape(term):
+        if isinstance(term, str):
+            return quote_plus(term)
+        return term
+
     def read(self, external_id, attributes=None, storeview=None):
         """ Returns the information of a record
 
@@ -331,17 +328,12 @@ class GenericAdapter(AbstractComponent):
             return self._call('%s.info' % self._magento_model,
                               arguments, storeview=storeview)
 
-        def escape(term):
-            if isinstance(term, str):
-                return quote(term)
-            return term
-
         if attributes:
             raise NotImplementedError
         if self._magento2_key:
             return self._call(
-                '%s/%s' % (self._magento2_model, escape(external_id)),
-                attributes)
+                '%s/%s' % (self._magento2_model, self.escape(external_id)),
+                attributes, storeview=storeview)
         res = self._call(self._magento2_model, None)
         return next(record for record in res if record['id'] == external_id)
 

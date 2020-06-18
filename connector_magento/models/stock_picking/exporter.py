@@ -80,7 +80,7 @@ class MagentoPickingExporter(Component):
             if picking_method == 'complete':
                 args = self._get_args(binding)
             elif picking_method == 'partial':
-                lines_info = get_lines_info(binding)
+                lines_info = get_lines_info()
                 args = self._get_args(binding, lines_info)
             else:
                 raise ValueError("Wrong value for picking_method, authorized "

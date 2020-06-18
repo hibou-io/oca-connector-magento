@@ -19,12 +19,12 @@ interactions:
       Cache-Control: ['no-store, no-cache, must-revalidate']
       Connection: [keep-alive]
       Content-Type: [application/json; charset=utf-8]
-      Date: ['Fri, 24 Apr 2020 10:42:55 GMT']
+      Date: ['Fri, 08 May 2020 06:38:33 GMT']
       Expires: ['Thu, 19 Nov 1981 08:52:00 GMT']
       Pragma: [no-cache]
       Server: [nginx/1.14.0 (Ubuntu)]
-      Set-Cookie: ['PHPSESSID=h7mhplamq0mksruo5ola1stpco; expires=Fri, 24-Apr-2020
-          11:42:55 GMT; Max-Age=3600; path=/; domain=magento; HttpOnly']
+      Set-Cookie: ['PHPSESSID=4gh745n6sc26l9a9fasjrhtk5j; expires=Fri, 08-May-2020
+          07:38:33 GMT; Max-Age=3600; path=/; domain=magento; HttpOnly']
       Transfer-Encoding: [chunked]
       Vary: [Accept-Encoding]
       X-Frame-Options: [SAMEORIGIN]
