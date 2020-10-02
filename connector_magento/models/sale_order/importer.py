@@ -809,4 +809,7 @@ class SaleOrderLineImportMapper(Component):
             total = base_row_total_incl_tax
         else:
             total = base_row_total
-        return {'price_unit': (total + discount_amount) / qty_ordered}
+        
+        if self.collection.version == '2.0':
+            total += discount_amount
+        return {'price_unit': total / qty_ordered}
