@@ -13,6 +13,9 @@ class MagentoPickingExporter(Component):
     _name = 'magento.stock.picking.exporter'
     _inherit = 'magento.exporter'
     _apply_on = ['magento.stock.picking']
+    
+    def tracking_included_in_export(self):
+        return self.collection.version == '2.0'
 
     def _get_args(self, binding, lines_info=None):
         if lines_info is None:
@@ -60,6 +63,16 @@ class MagentoPickingExporter(Component):
         magento_shop = binding.sale_id.magento_bind_ids[0].store_id
         return magento_shop.send_picking_done_mail
 
+    def _get_tracks(self, binding):
+        tracking_ref = binding.carrier_tracking_ref
+        if not tracking_ref:
+            return None
+        return [{
+            "carrier_code": binding.carrier_id.magento_carrier_code,
+            "title": binding.carrier_id.magento_tracking_title,
+            "track_number": track_number,
+        } for track_number in tracking_ref.split(',')]
+
     def run(self, binding):
         """
         Export the picking to Magento
@@ -103,8 +116,12 @@ class MagentoPickingExporter(Component):
                 'items': [{
                     'order_item_id': key,
                     'qty': val,
-                } for key, val in get_lines_info().items()]
+                } for key, val in get_lines_info().items()],
+                'notify': self._get_picking_mail_option(binding),
             }
+            tracks = self._get_tracks(binding)
+            if tracks:
+                arguments['tracks'] = tracks
             external_id = self.backend_adapter._call(
                 'order/%s/ship' %
                 binding.sale_id.magento_bind_ids[0].external_id,
