@@ -86,8 +86,10 @@ class MagentoTrackingExporter(Component):
 
         binder = self.binder_for()
         external_id = binder.to_external(binding)
+        picking_exported_tracking = False
         if not external_id:
             picking_exporter = self.component(usage='record.exporter')
+            picking_exported_tracking = picking_exporter.tracking_included_in_export()
             picking_exporter.run(binding)
             external_id = binder.to_external(binding)
         if not external_id:
@@ -95,7 +97,8 @@ class MagentoTrackingExporter(Component):
                                   "can't export the tracking number." %
                                   binding.name)
 
-        self._validate(binding)
-        self._check_allowed_carrier(binding, sale_binding_id.external_id)
-        tracking_args = self._get_tracking_args(binding)
-        self.backend_adapter.add_tracking_number(external_id, *tracking_args)
+        if not picking_exported_tracking:
+            self._validate(binding)
+            self._check_allowed_carrier(binding, sale_binding_id.external_id)
+            tracking_args = self._get_tracking_args(binding)
+            self.backend_adapter.add_tracking_number(external_id, *tracking_args)

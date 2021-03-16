@@ -52,8 +52,9 @@ class MagentoStockPicking(models.Model):
         self.ensure_one()
         with self.backend_id.work_on(self._name) as work:
             exporter = work.component(usage='record.exporter')
+            _with_tracking = with_tracking and not exporter.tracking_included_in_export()
             res = exporter.run(self)
-            if with_tracking and self.carrier_tracking_ref:
+            if _with_tracking and self.carrier_tracking_ref:
                 self.with_delay().export_tracking_number()
             return res
 
