@@ -84,6 +84,7 @@ class TestImportPartner(MagentoSyncTestCase):
                              "type 'delivery'")
         self.assertEqual(partner.company_id.id,
                          self.backend.company_id.id)
+        # TODO This call fails, (False != 1) Why? Generally isn't a problem but is curious.
         self.assertEqual(partner.child_ids[0].company_id.id,
                          self.backend.company_id.id)
 

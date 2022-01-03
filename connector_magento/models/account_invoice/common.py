@@ -1,12 +1,13 @@
 # Copyright 2013-2019 Camptocamp SA
 # © 2016 Sodexis
+# © 2022 Hibou Corp.
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl.html)
 
 import logging
 import xmlrpc.client
 from odoo import api, models, fields
 from odoo.addons.component.core import Component
-from odoo.addons.queue_job.job import job, related_action
+# from odoo.addons.queue_job.job import job, related_action
 from odoo.addons.connector.exception import IDMissingInBackend
 
 _logger = logging.getLogger(__name__)
@@ -16,10 +17,10 @@ class MagentoAccountInvoice(models.Model):
     """ Binding Model for the Magento Invoice """
     _name = 'magento.account.invoice'
     _inherit = 'magento.binding'
-    _inherits = {'account.invoice': 'odoo_id'}
+    _inherits = {'account.move': 'odoo_id'}
     _description = 'Magento Invoice'
 
-    odoo_id = fields.Many2one(comodel_name='account.invoice',
+    odoo_id = fields.Many2one(comodel_name='account.move',
                               string='Invoice',
                               required=True,
                               ondelete='cascade')
@@ -32,9 +33,8 @@ class MagentoAccountInvoice(models.Model):
          'A Magento binding for this invoice already exists.'),
     ]
 
-    @job(default_channel='root.magento')
-    @related_action(action='related_action_unwrap_binding')
-    @api.multi
+    # @job(default_channel='root.magento')
+    # @related_action(action='related_action_unwrap_binding')
     def export_record(self):
         """ Export a validated or paid invoice. """
         self.ensure_one()
@@ -47,7 +47,7 @@ class AccountInvoice(models.Model):
     """ Adds the ``one2many`` relation to the Magento bindings
     (``magento_bind_ids``)
     """
-    _inherit = 'account.invoice'
+    _inherit = 'account.move'
 
     magento_bind_ids = fields.One2many(
         comodel_name='magento.account.invoice',
@@ -130,7 +130,7 @@ class MagentoBindingInvoiceListener(Component):
 class MagentoInvoiceListener(Component):
     _name = 'magento.account.invoice.listener'
     _inherit = 'base.event.listener'
-    _apply_on = ['account.invoice']
+    _apply_on = ['account.move']
 
     def on_invoice_paid(self, record):
         self.invoice_create_bindings(record)

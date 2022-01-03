@@ -12,8 +12,10 @@ class TestUpdateStockQty(Magento2SyncTestCase):
     def _product_change_qty(self, product, new_qty, location_id=False):
         wizard_model = self.env['stock.change.product.qty']
         data = {'product_id': product.id,
+                'product_tmpl_id': product.product_tmpl_id.id,
                 'new_quantity': new_qty}
         if location_id:
+            raise Exception('stock.change.product.qty no longer allows location, defaults to first warehouse stock.')
             data['location_id'] = location_id
         wizard = wizard_model.create(data)
         wizard.change_product_qty()

@@ -146,7 +146,7 @@ class TestImportProductImage(TransactionComponentRegistryCase):
 
         binding.with_context.assert_called_with(connector_no_export=True)
         binding_no_export.write.assert_called_with(
-            {'image': B64_PNG_IMG_4PX_GREEN}
+            {'image_128': B64_PNG_IMG_4PX_GREEN}
         )
 
     def test_import_images_403(self):
