@@ -25,15 +25,17 @@ class TestExportPicking(Magento2SyncTestCase):
             if line.product_id.type == 'product':
                 inventory = self.env['stock.inventory'].create({
                     'name': 'Inventory for line %s' % line.name,
-                    'filter': 'product',
-                    'product_id': line.product_id.id,
+                    'product_ids': [(4, line.product_id.id)],
                     'line_ids': [(0, 0, {
                         'product_id': line.product_id.id,
                         'product_qty': line.product_uom_qty,
-                        'location_id':
-                        self.env.ref('stock.stock_location_stock').id
+                        'location_id': self.env.ref('stock.stock_location_stock').id
                     })]
                 })
+                inventory.action_start()
+                # inventory.line_ids.write({
+                #     'product_qty': line.product_uom_qty,
+                # })
                 inventory.action_validate()
         self.picking = self.order_binding.picking_ids
         self.assertEqual(len(self.picking), 1)
@@ -75,8 +77,12 @@ class TestExportPicking(Magento2SyncTestCase):
             # should be created, then a job is generated that will export
             # the picking. Here the job is not created because we mock
             # 'with_delay()'
+            # TODO goes in assigned, stays assigned?!
+            self.assertEqual(self.picking.state, 'assigned')
             self.env['stock.immediate.transfer'].create(
                 {'pick_ids': [(4, self.picking.id)]}).process()
+            # self.picking.button_validate()
+            # self.picking._action_done()
             self.assertEqual(self.picking.state, 'done')
             picking_binding = self.env['magento.stock.picking'].search(
                 [('odoo_id', '=', self.picking.id),
@@ -122,8 +128,9 @@ class TestExportPicking(Magento2SyncTestCase):
                 backorder_action['res_model'], 'stock.backorder.confirmation',
                 'A backorder confirmation wizard action must be created')
             # Confirm backorder creation
-            self.env['stock.backorder.confirmation'].browse(
-                backorder_action['res_id']).process()
+            self.env['stock.backorder.confirmation'].with_context(
+                **backorder_action['context']).create({}).process()
+
 
             self.assertEqual(self.picking.state, 'done')
 

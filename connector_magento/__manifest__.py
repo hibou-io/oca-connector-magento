@@ -1,9 +1,10 @@
 # © 2013 Guewen Baconnier,Camptocamp SA,Akretion
 # © 2016 Sodexis
+# © 2022 Hibou Corp.
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
 {'name': 'Magento Connector',
- 'version': '12.0.1.1.4',
+ 'version': '14.0.1.0.0',
  'category': 'Connector',
  'depends': ['account',
              'base_technical_user',
@@ -16,7 +17,7 @@
  'external_dependencies': {
      'python': ['magento'],
  },
- 'author': "Camptocamp,Akretion,Sodexis,Odoo Community Association (OCA)",
+ 'author': "Camptocamp,Akretion,Sodexis,Hibou Corp.,Odoo Community Association (OCA)",
  'license': 'AGPL-3',
  'website': 'http://www.odoo-magento-connector.com',
  'images': ['images/magento_backend.png',

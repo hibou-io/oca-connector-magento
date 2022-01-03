@@ -27,7 +27,6 @@ class TestRelatedActionStorage(MagentoSyncTestCase):
         expected = {
             'name': mock.ANY,
             'type': 'ir.actions.act_window',
-            'view_type': 'form',
             'view_mode': 'form',
             'res_id': product.id,
             'res_model': 'product.product',
