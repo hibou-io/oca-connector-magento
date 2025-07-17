@@ -150,7 +150,11 @@ class MagentoImporter(AbstractComponent):
         # special check on data before import
         self._validate_data(data)
         model = self.model.with_context(connector_no_export=True)
-        binding = model.create(data)
+        try:
+            binding = model.create(data)
+        except Exception as e:
+            _logger.error(f'Exception creating binding for {model._name} for data {data}')
+            raise e
         _logger.debug('%d created from magento %s', binding, self.external_id)
         return binding
 

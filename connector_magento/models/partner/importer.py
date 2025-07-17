@@ -433,8 +433,10 @@ class AddressImportMapper(Component):
     def direct(self):
         fields = super(AddressImportMapper, self).direct[:]
         fields += [
-            ('created_at', 'created_at'),
-            ('updated_at', 'updated_at'),
+            # cannot get to work propperly so we will just avoid the issue
+            # do we really care anyway?
+            # (normalize_datetime('created_at'), 'created_at'),
+            # (normalize_datetime('updated_at'), 'updated_at'),
             ('company', 'company'),
         ]
         return fields

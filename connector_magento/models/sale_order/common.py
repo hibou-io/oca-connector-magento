@@ -243,6 +243,12 @@ class SaleOrderAdapter(Component):
 
     def _call(self, method, arguments, http_method=None, storeview=None):
         try:
+            # Openmage 1.9? Maybe an incompatible module?
+            if method == 'sales_order.info':
+                if isinstance(arguments, list) and len(arguments) >= 1 and isinstance(arguments[0], dict):
+                    adict = arguments[0]
+                    if 'increment_id' in adict and 'status' in adict:
+                        arguments = [adict['increment_id']]
             return super(SaleOrderAdapter, self)._call(
                 method, arguments, http_method=http_method,
                 storeview=storeview)
@@ -279,6 +285,10 @@ class SaleOrderAdapter(Component):
                 # 'limit': 200,
                 'filters': filters,
             }
+
+            # Openmage 1.9 just pass in what we have already
+            # arguments = {'imported': False,}
+            # arguments.update(filters)
         else:
             arguments = filters
         return super(SaleOrderAdapter, self).search(arguments)
@@ -290,8 +300,12 @@ class SaleOrderAdapter(Component):
         """
         # pylint: disable=method-required-super
         if self.collection.version == '1.7':
-            return self._call('%s.info' % self._magento_model,
+            res = self._call('%s.info' % self._magento_model,
                               [external_id, attributes])
+            _logger.error(f'read for {external_id} :: {res}')
+            return res
+            # return self._call('%s.info' % self._magento_model,
+            #                   [external_id, attributes])
         return super(SaleOrderAdapter, self).read(
             external_id, attributes=attributes)
 

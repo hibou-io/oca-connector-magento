@@ -19,7 +19,7 @@ import odoo
 from os.path import dirname, join
 from contextlib import contextmanager
 from odoo import models
-from odoo.addons.component.tests.common import SavepointComponentCase
+from odoo.addons.component.tests.common import TransactionComponentCase
 from odoo.tools import mute_logger
 
 from vcr import VCR
@@ -79,7 +79,7 @@ class MagentoHelper(object):
             return 1
 
 
-class MagentoTestCase(SavepointComponentCase):
+class MagentoTestCase(TransactionComponentCase):
     """ Base class - Test the imports from a Magento Mock.
 
     The data returned by Magento are those created for the

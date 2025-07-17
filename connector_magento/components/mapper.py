@@ -25,5 +25,10 @@ def normalize_datetime(field):
     def modifier(self, record, to_attr):
         if record[field] == '0000-00-00 00:00:00':
             return None
-        return record[field]
+        dt = record[field]
+        # TODO Note this appears to come and go on the Magento side...
+        # Very hacky convert to our format, datetime-less
+        if 'T' in dt:
+            dt = '-'.join(dt.replace('T', ' ').split('-')[0:3])
+        return dt
     return modifier
