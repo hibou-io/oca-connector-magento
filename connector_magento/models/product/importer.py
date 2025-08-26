@@ -11,7 +11,7 @@ from odoo import _
 from odoo.addons.component.core import Component
 from odoo.addons.connector.components.mapper import mapping, only_create
 from odoo.addons.connector.exception import MappingError, InvalidDataError
-from ...components.mapper import normalize_datetime
+from ...components.mapper import normalize_datetime, normalize_float
 
 _logger = logging.getLogger(__name__)
 
@@ -173,7 +173,7 @@ class ProductImportMapper(Component):
               ('id', 'magento_internal_id'),
               ('description', 'description'),
               ('weight', 'weight'),
-              ('cost', 'standard_price'),
+              (normalize_float('cost'), 'standard_price'),
               ('short_description', 'description_sale'),
               ('sku', 'default_code'),
               ('type_id', 'product_type'),

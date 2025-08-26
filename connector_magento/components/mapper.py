@@ -28,7 +28,13 @@ def normalize_datetime(field):
         dt = record[field]
         # TODO Note this appears to come and go on the Magento side...
         # Very hacky convert to our format, datetime-less
-        if 'T' in dt:
+        if dt and 'T' in dt:
             dt = '-'.join(dt.replace('T', ' ').split('-')[0:3])
         return dt
+    return modifier
+
+def normalize_float(field):
+    """Turn a Magento string into a float"""
+    def modifier(self, record, to_attr):
+        return float(record[field] or 0.0)
     return modifier

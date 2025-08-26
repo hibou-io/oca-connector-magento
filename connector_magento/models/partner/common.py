@@ -135,8 +135,8 @@ class MagentoAddress(models.Model):
     )
 
     _sql_constraints = [
-        ('odoo_uniq', 'unique(backend_id, odoo_id)',
-         'A partner address can only have one binding by backend.'),
+        ('odoo_uniq', 'unique(backend_id, website_id, odoo_id)',
+         'A partner address can only have one binding by backend+website.'),
     ]
 
 
