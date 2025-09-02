@@ -142,6 +142,13 @@ class SaleOrder(models.Model):
         self_copy._magento_link_binding_of_copy(new)
         return new
 
+    def _prepare_confirmation_values(self):
+        # we specifically set the date_order, confirming shouldn't set it to now
+        res = super()._prepare_confirmation_values()
+        if 'date_order' in res and self[0].sudo().magento_bind_ids:
+            del res['date_order']
+        return res
+
 
 class MagentoSaleOrderLine(models.Model):
     _name = 'magento.sale.order.line'
